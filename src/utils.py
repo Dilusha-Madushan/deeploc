@@ -33,11 +33,27 @@ class ModelAttributes:
         self.clip_len = clip_len
         self.embed_len = embed_len
 
+
+def download_and_load_model(model_name):
+    model_dir = os.path.expanduser(f"~/.cache/torch/hub/checkpoints/")
+    os.makedirs(model_dir, exist_ok=True)
+    model_path = os.path.join(model_dir, f"{model_name}.pt")
+
+    if not os.path.exists(model_path):
+        url = f"https://dl.fbaipublicfiles.com/fair-esm/regression/{model_name}-contact-regression.pt"
+        print(f"Downloading {model_name} from {url}")
+        torch.hub.download_url_to_file(url, model_path)
+
+    model_data = torch.load(model_path)
+    alphabet = Alphabet.from_architecture(model_data["args"].arch)
+    return model_data, alphabet
+
 def get_train_model_attributes(model_type):
     if model_type == FAST:
         # Directly load the ESM-2 model and alphabet with error handling
         try:
-            model, alphabet = pretrained.load_model_and_alphabet('esm2_t6_8M_UR50D')
+            model_name = 'esm2_t6_8M_UR50D'
+            model_data, alphabet = download_and_load_model(model_name)
         except AttributeError as e:
             print(f"Error loading model and alphabet: {e}")
             raise e
