@@ -32,6 +32,23 @@ def embed_esm1b(embed_dataloader, out_file):
     except:
         os.system(f"rm {out_file}")
         raise Exception("Failed to create embeddings")
+
+def embed_esm2(embed_dataloader, out_file, model_name='esm2_t6_8M_UR50D'):
+    model, alphabet = pretrained.load_model_and_alphabet(model_name)
+    model.eval().to(device)
+    embed_h5 = h5py.File(out_file, "w")
+    try:
+        with torch.autocast(device_type=device, dtype=dtype):
+            with torch.no_grad():
+                for i, (toks, lengths, np_mask, labels) in tqdm.tqdm(enumerate(embed_dataloader)):
+                    embed = model(toks.to(device), repr_layers=[33])["representations"][33].float().cpu().numpy()
+                    for j in range(len(labels)):
+                        # removing start and end tokens
+                        embed_h5[labels[j]] = embed[j, 1:1+lengths[j]].astype(np.float16)
+        embed_h5.close()
+    except:
+        os.system(f"rm {out_file}")
+        raise Exception("Failed to create embeddings")
     
 
 def embed_prott5(embed_dataloader, out_file):
@@ -59,8 +76,11 @@ def generate_embeddings(model_attrs: ModelAttributes):
     embed_dataset = FastaBatchedDatasetTorch(test_df)
     embed_batches = embed_dataset.get_batch_indices(8196, extra_toks_per_seq=1)
     if model_attrs.model_type == FAST:
-        embed_dataloader = torch.utils.data.DataLoader(embed_dataset, collate_fn=BatchConverter(model_attrs.alphabet), batch_sampler=embed_batches)
-        embed_esm1b(embed_dataloader, EMBEDDINGS[model_attrs.model_type]["embeds"])
+        # embed_dataloader = torch.utils.data.DataLoader(embed_dataset, collate_fn=BatchConverter(model_attrs.alphabet), batch_sampler=embed_batches)
+        # embed_esm1b(embed_dataloader, EMBEDDINGS[model_attrs.model_type]["embeds"])
+        embed_dataloader = torch.utils.data.DataLoader(embed_dataset, collate_fn=BatchConverter(model_attrs.alphabet),
+                                                       batch_sampler=embed_batches)
+        embed_esm2(embed_dataloader, EMBEDDINGS[model_attrs.model_type]["embeds"], model_name='esm2_t6_8M_UR50D')
     elif model_attrs.model_type == ACCURATE:
         embed_dataloader = torch.utils.data.DataLoader(embed_dataset, collate_fn=BatchConverterProtT5(model_attrs.alphabet), batch_sampler=embed_batches)
         embed_prott5(embed_dataloader, EMBEDDINGS[model_attrs.model_type]["embeds"])

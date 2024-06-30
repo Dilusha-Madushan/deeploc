@@ -9,6 +9,8 @@ import argparse
 import subprocess
 import os
 import warnings
+# import torch
+# from torch.nn import BCEWithLogitsLoss
 
 warnings.filterwarnings(
     "ignore", ".*Trying to infer the `batch_size` from an ambiguous collection.*"
@@ -17,8 +19,14 @@ warnings.filterwarnings(
 def train_model(model_attrs: ModelAttributes, datahandler:DataloaderHandler, outer_i: int):
     train_dataloader, val_dataloader = datahandler.get_train_val_dataloaders(outer_i)
 
+    # class_counts = datahandler.get_class_counts()
+    # class_weights = [sum(class_counts) / c for c in class_counts]
+    # class_weights = torch.FloatTensor(class_weights).to(device)
+    #
+    # criterion = BCEWithLogitsLoss(weight=class_weights)
+
     checkpoint_callback = ModelCheckpoint(
-        monitor='bce_loss',
+        monitor='val_loss',
         dirpath=model_attrs.save_path,
         filename= f"{outer_i}_1Layer",
         save_top_k=1,
@@ -28,7 +36,7 @@ def train_model(model_attrs: ModelAttributes, datahandler:DataloaderHandler, out
     )
 
     early_stopping_callback = EarlyStopping(
-         monitor='bce_loss',
+         monitor='val_loss',
          patience=5, 
          mode='min'
     )

@@ -342,6 +342,11 @@ class DataloaderHandler:
         val_dataloader = torch.utils.data.DataLoader(val_dataset, collate_fn=TrainBatchConverter(self.alphabet, self.embed_len), batch_sampler=val_batches)
         return train_dataloader, val_dataloader
 
+    def get_class_counts(self):
+        data_df = get_swissprot_df(self.clip_len)
+        class_counts = data_df[CATEGORIES].sum().tolist()
+        return class_counts
+
     def get_partition(self, outer_i):
         data_df = get_swissprot_df(self.clip_len )
         test_df = data_df[data_df.Partition == outer_i].reset_index(drop=True)
