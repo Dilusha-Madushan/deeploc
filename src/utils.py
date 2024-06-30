@@ -2,6 +2,7 @@ from src.model import *  # Ensure ESM2Frozen is imported here
 from src.data import DataloaderHandler
 import pickle
 from transformers import T5EncoderModel, T5Tokenizer, logging
+from esm import Alphabet, pretrained
 import os
 
 # Define the ModelAttributes class to handle different model configurations
@@ -37,8 +38,7 @@ class ModelAttributes:
 def get_train_model_attributes(model_type):
     if model_type == FAST:
         # Use ESM-2 instead of ESM-1b
-        with open("models/ESM2_alphabet.pkl", "rb") as f:  # Updated path and file name
-            alphabet = pickle.load(f)
+        model, alphabet = pretrained.load_model_and_alphabet('esm2_t6_8M_UR50D')
         return ModelAttributes(
             model_type,
             ESM2Frozen,  # Updated to use ESM2Frozen model class
