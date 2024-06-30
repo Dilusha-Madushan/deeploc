@@ -141,9 +141,20 @@ class ProtT5Frozen(BaseModel):
 
 
 # Updated class ESM1bFrozen to ESM2Frozen
+# class ESM2Frozen(BaseModel):
+#     def __init__(self):
+#         super().__init__(1280)
+
 class ESM2Frozen(BaseModel):
-    def __init__(self):
+    def __init__(self, tokenizer):
         super().__init__(1280)
+        self.tokenizer = tokenizer
+
+    def forward(self, sequences):
+        inputs = self.tokenizer(sequences, return_tensors='pt', padding=True, truncation=True)
+        outputs = self.model(**inputs)
+        return outputs
+
 
 
 pos_weights_annot = torch.tensor([0.23, 0.92, 0.98, 2.63, 5.64, 1.60, 2.37, 1.87, 2.03])
